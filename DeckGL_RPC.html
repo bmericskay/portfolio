@@ -1,0 +1,1398 @@
+<html>
+
+<head>
+    <title>RPC Explore with DeckGL</title>
+        <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+		<meta charset='utf-8' />
+
+<script src="https://unpkg.com/deck.gl@^7.0.0/dist.min.js"></script>
+<script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+		<link href='https://fonts.googleapis.com/css?family=Advent Pro' rel='stylesheet'>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <style type="text/css">
+
+ #map { position:absolute; top:0; bottom:0; width:100%; }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0
+        }
+
+.titre {
+    position: absolute;
+    background-color: #19202c;
+	  color :#ffffff;
+    font-family:  Verdana, sans-serif;
+    padding: 10px;
+    width: 850px;
+    left: 330px;
+    top: 0px;
+    z-index: 2;
+    text-align: center;
+    font-size: 25;
+}
+
+.view {
+    position: absolute;
+	  top: 50px;
+    left: 330px;
+    padding: 12px;
+    width: 400px;
+    background-color: #19202c;
+    z-index: 2;
+    text-align: left;
+}
+
+
+.citychoice {
+font-size: 15;
+  }
+
+.map-overlay {
+    position: absolute;
+	  top: 0px;
+    left : 0px;
+    padding: 10px;
+    width: 330px;
+    height: 100%;
+  	z-index: 2;
+    background-color: #ffffff;
+  	color :#19202c;
+    font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+	  opacity : 1;
+}
+
+.map-overlay label {
+    display: block;
+    font-weight: bold;
+    margin: 0 0 2px;
+}
+
+
+.map-overlay2 {
+  position: absolute;
+  bottom: 10%;
+  right : 1%;
+  padding: 10px;
+  width: 230px;
+  z-index: 2;
+  background-color: #ffffff;
+  color :#19202c;
+  border-radius: 10px;
+  font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  opacity : 0.9;
+
+}
+
+.map-overlay2 div {
+    color: black;
+    margin-bottom: 0px;
+    padding-bottom: 0px;
+    text-align: left;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 80%;
+  height: 4px;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.8;
+
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+
+
+.slider::-moz-range-thumb {
+  width: 17px;
+  height: 8px;
+  background: #0074D9;
+  cursor: pointer;
+}
+
+
+
+
+
+        </style>
+</head>
+
+<body>
+
+
+
+<div id = "title" class='titre'>
+
+<p><b>Explorer les données de covoiturage du RPC avec DECK.GL</b></p>
+
+</div>
+
+
+<div  id = "view" class='view'>
+<button  id="2D" class="btn btn-info btn-sm">Vue 2D</button>
+<button  id="3D"class="btn btn-warning btn-sm">Vue 3D</button>
+<button  id="base"class="btn btn-success btn-sm">Vue globale</button>
+
+
+<select class="citychoice" id='city' name='city'>
+    <option value='Pays de la Loire'>Pays de la Loire</option>
+    <option value='Loire Atlantique'>Loire Atlantique</option>
+    <option value='Maine et Loire'>Maine et Loire</option>
+    <option value='Vendée'>Vendée</option>
+    <option value='Sarthe'>Sarthe</option>
+    <option value='Ille et Vilaine'>Ille et Vilaine</option>
+</select>
+</div>
+
+
+
+<div class='map-overlay2'>
+
+  <h5>Données contextuelles</h5>
+
+<hr>
+
+  <div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" value="Routes" id="Routes" onchange="switchlayer('Routes')"checked>
+    <label class="form-check-label" for="Routes">
+  Routes principales
+    </label>
+  </div>
+  <div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" value="Departements" id="Departements"  onchange="switchlayer('Departements')"checked>
+    <label class="form-check-label" for="Departements">
+    Départements
+    </label>
+  </div>
+  <div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" value="Batiments_3D" id="Batiments_3D"  onchange="switchlayer('Batiments_3D')">
+    <label class="form-check-label" for="Batiments_3D">
+    Bâtiments 3D
+    </label>
+  </div>
+
+
+</div>
+
+<div class='map-overlay'>
+
+
+            <div class="btn-group btn-group-sm" role="group" aria-label="Basic radio toggle button group">
+            <input type="radio" class="btn-check" name="btnradio" id="A" autocomplete="off" checked>
+            <label class="btn btn-outline-primary" for="A">Dotmap</label>
+
+            <input type="radio" class="btn-check" name="btnradio" id="B" autocomplete="off">
+            <label class="btn btn-outline-primary" for="B">Dot Color</label>
+
+            <input type="radio" class="btn-check" name="btnradio" id="C" autocomplete="off">
+            <label class="btn btn-outline-primary" for="C">Icons</label>
+
+            <input type="radio" class="btn-check" name="btnradio" id="P" autocomplete="off">
+            <label class="btn btn-outline-primary" for="P">Circles</label>
+
+            </div>
+
+
+<div>
+<label>Taille des points </label>
+<input id="radiusMinPixels" class='slider' type="range" min="0" max="4" step="0.1" value="1.4"></input>
+<span id="radiusMinPixels-value"></span>
+</div>
+
+<br>
+
+<div>
+<label>Taille du brushing (en m)</label>
+<input id="brushingRadius" class='slider' type="range" min="2000" max="50000" step="1000" value="10000"></input>
+<span id="brushingRadius-value"></span>
+      </div>
+
+
+<hr>
+
+
+            <div class="btn-group btn-group-sm" role="group" aria-label="Basic radio toggle button group">
+            <input type="radio" class="btn-check" name="btnradio" id="D" autocomplete="off">
+            <label class="btn btn-outline-primary" for="D">Lines</label>
+
+            <input type="radio" class="btn-check" name="btnradio" id="E" autocomplete="off">
+            <label class="btn btn-outline-primary" for="E">Color Lines</label>
+
+            <input type="radio" class="btn-check" name="btnradio" id="R" autocomplete="off">
+            <label class="btn btn-outline-primary" for="R">Lines Communes</label>
+
+            </div>
+
+<div>
+<label>Taille Ligne</label>
+<input id="getWidth" class='slider' type="range" min="0.01" max="0.5" step="0.01" value="0.1"></input>
+<span id="getWidth-value"></span>
+</div>
+
+
+<BR>
+
+
+<div id = "I" class="form-check form-check-inline">
+<input type="radio" id="customRadio9" name="customRadio" class="form-check-input">
+<label class="form-check-label" for="customRadio9">44</label>
+</div>
+
+<div id = "J" class="form-check form-check-inline">
+<input type="radio" id="customRadio10" name="customRadio" class="form-check-input">
+<label class="form-check-label" for="customRadio10">49</label>
+</div>
+
+<div id = "K" class="form-check form-check-inline">
+<input type="radio" id="customRadio11" name="customRadio" class="form-check-input">
+<label class="form-check-label" for="customRadio11">85</label>
+</div>
+
+<div id = "L" class="form-check form-check-inline">
+<input type="radio" id="customRadio5" name="customRadio" class="form-check-input">
+<label class="form-check-label" for="customRadio5">35</label>
+</div>
+
+  <hr>
+
+            <div class="btn-group btn-group-sm" role="group" aria-label="Basic radio toggle button group">
+            <input type="radio" class="btn-check" name="btnradio" id="F" autocomplete="off">
+            <label class="btn btn-outline-primary" for="F">Arcs</label>
+
+            <input type="radio" class="btn-check" name="btnradio" id="G" autocomplete="off">
+            <label class="btn btn-outline-primary" for="G">Color Arcs</label>
+
+            <input type="radio" class="btn-check" name="btnradio" id="Q" autocomplete="off">
+            <label class="btn btn-outline-primary" for="Q">Arcs Communes</label>
+
+            </div>
+
+
+  <hr>
+
+              <div class="btn-group btn-group-sm" role="group" aria-label="Basic radio toggle button group">
+              <input type="radio" class="btn-check" name="btnradio" id="H" autocomplete="off">
+              <label class="btn btn-outline-primary" for="H">Grid 2D</label>
+
+              <input type="radio" class="btn-check" name="btnradio" id="M" autocomplete="off">
+              <label class="btn btn-outline-primary" for="M">Grid 3D</label>
+
+              </div>
+
+
+<div>
+<label>Taille des mailles (en m)</label>
+<input id="cellSize" class='slider' type="range" min="100" max="10000" step="100" value="5000"></input>
+<span id="cellSize-value"></span>
+</div>
+
+<br>
+
+<div>
+<label>Espacement des mailles</label>
+<input id="coverage" class='slider' type="range" min="0.5" max="1" step="0.05" value="0.95"></input>
+<span id="coverage-value"></span>
+</div>
+
+<br>
+
+<div>
+<label>Hauteur de l'extrusion</label>
+<input id="elevationScale" class='slider' type="range" min="0" max="500" step="10" value="250"></input>
+<span id="elevationScale-value"></span>
+</div>
+
+<hr>
+
+
+                <div class="btn-group btn-group-sm" role="group" aria-label="Basic radio toggle button group">
+                <input type="radio" class="btn-check" name="btnradio" id="N" autocomplete="off">
+                <label class="btn btn-outline-primary" for="N">ScreenGridLayer</label>
+                </div>
+
+<div>
+<label>Taille des cellules</label>
+<input id="cellSizePixels" class='slider' type="range" min="5" max="100" step="1" value="20"></input>
+<span id="cellSizePixels-value"></span>
+</div>
+
+<hr>
+
+
+                <div class="btn-group btn-group-sm" role="group" aria-label="Basic radio toggle button group">
+                <input type="radio" class="btn-check" name="btnradio" id="0" autocomplete="off">
+                <label class="btn btn-outline-primary" for="0">Heatmap</label>
+                </div>
+
+
+<div>
+<label>Taille Heatmap</label>
+<input id="radiusPixels" class='slider' type="range" min="5" max="100" step="1" value="30"></input>
+<span id="radiusPixels-value"></span>
+</div>
+<BR>
+<div>
+<label>Intensity Heatmap</label>
+<input id="intensity" class='slider' type="range" min="5" max="100" step="1" value="50"></input>
+<span id="intensity-value"></span>
+</div>
+<BR>
+<div>
+<label>Threesold</label>
+<input id="threshold" class='slider' type="range" min="0" max="1" step="0.05" value="0.1"></input>
+<span id="threshold-value"></span>
+</div>
+
+<hr>
+
+<p> <b> Données : </b>
+	   <a href="https://www.data.gouv.fr/fr/datasets/trajets-realises-en-covoiturage-registre-de-preuve-de-covoiturage/" target="_blank" >Registre de Preuve de Covoiturage</a>
+</p>
+
+</div>
+
+
+
+
+
+
+
+</div>
+
+
+
+<div id='map' class='map'>  </div>
+
+</body>
+
+
+<script type="text/javascript">
+
+
+// CONFIGURATION FLY TO
+
+
+var villes = {
+    'Pays de la Loire': {'center': [-1.8, 47.2],'zoom': 8.5,	bearing:20, pitch: 50},
+    'Loire Atlantique': {'center': [-1.653, 47.225],'zoom': 9.2},
+    'Maine et Loire': {'center': [-0.52, 47.37],'zoom': 9, },
+    'Vendée': {'center': [-1.24, 46.68],'zoom': 9.3},
+    'Sarthe': {'center': [0.29, 47.98],'zoom': 9.3},
+	  'Ille et Vilaine': {'center': [-1.67, 48.11],'zoom': 9.3}
+};
+
+var citySelect = document.getElementById('city');
+citySelect.addEventListener('change', function (event) {
+    var city = event.target.value;
+    map.flyTo(villes[city]);
+});
+
+
+
+// CONFIGURATION BASEMAP
+
+mapboxgl.accessToken = 'pk.eyJ1IjoibmluYW5vdW4iLCJhIjoiY2pjdHBoZGlzMnV4dDJxcGc5azJkbWRiYSJ9.o4dZRrdHcgVEKCveOXG1YQ';
+
+var {MapboxLayer, ArcLayer, ScatterplotLayer, LineLayer, GridLayer} = deck;
+
+//Create the Mapbox map
+var map = new mapboxgl.Map({
+    container: document.body,
+    style: 'mapbox://styles/ninanoun/cjswczqwb1dkz1fqtlb01sw0e',
+    center: [-1.8, 47.2],
+    zoom: 8.5,
+  	bearing:20,
+    pitch: 50,
+  	maxZoom: 17,
+  	minZoom:8,
+    antialias: true,
+    logoPosition: 'bottom-right',
+	  customAttribution : '<a href="https://formations.univ-rennes2.fr/fr/formations/master-37/master-mention-geomatique-parcours-systeme-d-information-geographique-et-analyse-des-territoires-sigat-JEOC8L9A.html">Réalisation : Boris Mericskay / données : RPC, OSM</a>'
+});
+
+
+function get_colour( d ) {
+        if( d === 44 ) {
+            return [255,170,0]
+        } else if ( d === 35) {
+            return [217,25,255]
+        } else if ( d === 49) {
+            return [102, 204, 0]
+		    } else if ( d === 37) {
+            return [10, 255, 255]
+		    } else if ( d === 53) {
+            return [128, 128, 128]
+        } else if ( d === 85) {
+            return [0, 115, 230]
+		    } else if ( d === 17) {
+            return [255, 51, 51]
+        } else { return [10, 255, 255] }
+    }
+
+
+//Create the deck.gl hexagon layer and style for the data
+var OPTIONS = ['brushingRadius', 'radiusMinPixels', 'coverage', 'cellSize', 'getWidth', 'cellSizePixels', 'radiusPixels', 'intensity', 'threshold', 'elevationScale'];
+
+
+
+
+
+//Add the deck.gl Custom Layer to the map once the Mapbox map loads
+map.on('style.load', () => {
+
+
+  // Add road
+
+  map.addSource('mapbox-streets-v8', {
+    type: 'vector',
+    url: 'mapbox://mapbox.mapbox-streets-v8'});
+
+    const bati =   map.addLayer({
+          "id": "Routes",
+          "type": "line",
+          "source": "mapbox-streets-v8",
+          "filter": ["all",  ["in", "class", "motorway", "trunk", "primary"]],
+          "layout": {'visibility': 'visible'},
+          "source-layer": "road",
+          "paint": {"line-color": "#ff7f00 ", "line-width": 0.8}
+      });
+
+
+
+      // Add Departements
+
+      map.addSource('Dep', {
+                type: 'geojson',
+                data: 'https://raw.githubusercontent.com/mastersigat/data/main/departements.geojson'
+            });
+
+        const dep = map.addLayer({
+            'id': 'Departements',
+            'type': 'line',
+            'source': 'Dep',
+            'paint': {'line-opacity': 0.7, 'line-width': 1.3,
+                     'line-color': '#000000'}
+     });
+
+           // Add Building 3D
+
+           const batiments = map.addLayer({
+             'id': 'Batiments_3D',
+             'source': 'composite',
+             'source-layer': 'building',
+             'filter': ['==', 'extrude', 'true'],
+             'type': 'fill-extrusion',
+             'minzoom': 14,
+             'layout': {'visibility': 'none'},
+             'paint': {'fill-extrusion-color': '#e6e5e4', 'fill-extrusion-height':
+             {'type': 'identity','property': 'height'},
+             'fill-extrusion-base': {'type': 'identity','property': 'min_height'},
+             'fill-extrusion-opacity': 0.8 }
+       });
+
+// Add ScatterplotLayer basic
+
+const ScatterplotLayer1 = new MapboxLayer({
+  id: 'Dotmap1',
+  type : ScatterplotLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  radiusMinPixels:1.4,
+  radiusMaxPixels:50,
+  getFillColor: [200, 0, 80],
+  getPosition: d => [d.longO, d.latO],
+  getRadius: 4,
+  radiusUnits : 'pixels',
+  opacity: 0.7,
+  intensity : 0.9,
+  pickable: true
+
+});
+
+// Add ScatterplotLayer Color
+
+const ScatterplotLayer2 = new MapboxLayer({
+  id: 'Dotmap2',
+  type : ScatterplotLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  radiusMinPixels:1,
+  radiusMaxPixels:50,
+  getFillColor: d => get_colour(d.dep),
+  getPosition: d => [d.longO, d.latO],
+  getRadius: 2,
+  radiusUnits : 'pixels',
+  opacity: 0.7,
+  intensity : 0.9,
+  pickable: true,
+  brushingEnabled: true,
+  brushingRadius: 10000,
+  extensions: [new BrushingExtension()]
+
+});
+
+// Add Icon Layer
+
+const IconLayerlayer1 = new MapboxLayer({
+  id: 'Icon',
+  type : IconLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getIcon: d => 'marker',
+  sizeScale: 20,
+  getColor:  d => get_colour(d.dep),
+  getPosition: d => [d.longO, d.latO],
+  iconAtlas: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png',
+  iconMapping: {
+    marker: {
+      x: 0,
+      y: 0,
+      width: 128,
+      height: 128,
+      anchorY: 0,
+      mask: true
+    }
+  },
+  opacity: 0.9,
+ intensity : 0.9
+});
+
+
+// Add ScatterplotLayer Colo Circles
+
+const ScatterplotLayer3 = new MapboxLayer({
+  id: 'Dotmap3',
+  type : ScatterplotLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/CommunesPDL.json',
+  radiusMinPixels:1,
+  radiusMaxPixels:50,
+  getFillColor: d => get_colour(d.INSEE_DEP),
+  getPosition: d => [d.long, d.lat],
+  getRadius: d => d.Num,
+  radiusUnits : 'pixels',
+  opacity: 0.7,
+  intensity : 0.9,
+  pickable: true
+
+});
+
+
+
+// Add Line Layer
+
+const LineLayer1 = new MapboxLayer({
+  id: 'Line1',
+  type: LineLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getSourcePosition: d => [d.longO, d.latO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getColor: [200, 0, 80],
+  getWidth: 0.1,
+  widthUnits: 'pixels',
+  pickable: true
+});
+
+
+// Add Line Layer Color
+
+const LineLayer2 = new MapboxLayer({
+  id: 'Line2',
+  type: LineLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getSourcePosition: d => [d.longO, d.latO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getColor: d => get_colour(d.dep),
+  getWidth: 0.1,
+  widthUnits: 'pixels',
+});
+
+
+// Add ArcLayer Communes
+
+const LineLayer3 = new MapboxLayer({
+  id: 'Line3',
+  type: LineLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/PDLCommunes.json',
+  getSourcePosition: d => [d.LongO, d.LatO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getColor: d => get_colour(d.dep),
+  getWidth: d =>d.nb/70
+});
+
+
+// Add Line Layer
+
+const LineLayer44 = new MapboxLayer({
+  id: '44',
+  type: LineLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getSourcePosition: d => [d.longO, d.latO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getColor: d => get_colour(d.dep),
+  getWidth: 0.1,
+  widthUnits: 'pixels',
+  pickable: true,
+  dataTransform: d => d.filter(d => d.dep === 44),
+
+});
+
+
+// Add Line Layer
+
+const LineLayer49 = new MapboxLayer({
+  id: '49',
+  type: LineLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getSourcePosition: d => [d.longO, d.latO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getColor: d => get_colour(d.dep),
+  getWidth: 0.1,
+  widthUnits: 'pixels',
+  pickable: true,
+  dataTransform: d => d.filter(d => d.dep === 49),
+
+});
+
+
+// Add Line Layer
+
+const LineLayer85 = new MapboxLayer({
+  id: '85',
+  type: LineLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getSourcePosition: d => [d.longO, d.latO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getColor: d => get_colour(d.dep),
+  getWidth: 0.1,
+  widthUnits: 'pixels',
+  pickable: true,
+  dataTransform: d => d.filter(d => d.dep === 85),
+
+});
+
+// Add Line Layer
+
+const LineLayer35 = new MapboxLayer({
+  id: '35',
+  type: LineLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getSourcePosition: d => [d.longO, d.latO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getColor: d => get_colour(d.dep),
+  getWidth: 0.1,
+  widthUnits: 'pixels',
+  pickable: true,
+  dataTransform: d => d.filter(d => d.dep === 35),
+
+});
+
+
+
+// Add ArcLayer
+
+const ArcLayer1 = new MapboxLayer({
+  id: 'Arc1',
+  type: ArcLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getSourcePosition: d => [d.longO, d.latO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getSourceColor: [200, 0, 80],
+  getTargetColor: [200, 0, 80],
+  getWidth: 0.03,
+  getHeight : 1,
+  getTilt : 10
+});
+
+
+
+// Add ArcLayer Color
+
+const ArcLayer2 = new MapboxLayer({
+  id: 'Arc2',
+  type: ArcLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getSourcePosition: d => [d.longO, d.latO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getSourceColor: d => get_colour(d.dep),
+  getTargetColor: d => get_colour(d.dep),
+  getHeight : 1,
+  getWidth: 0.03,
+  getTilt : 10,
+  brushingEnabled: true,
+  brushingRadius: 10000,
+  extensions: [new BrushingExtension()]
+
+});
+
+// Add ArcLayer Communes
+
+const ArcLayer3 = new MapboxLayer({
+  id: 'Arc3',
+  type: ArcLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/PDLCommunes.json',
+  getSourcePosition: d => [d.LongO, d.LatO],
+  getTargetPosition: d => [d.longD, d.latD],
+  getSourceColor: d => get_colour(d.dep),
+  getTargetColor: d => get_colour(d.dep),
+  getHeight : 1,
+  getWidth: d =>d.nb/50,
+  getTilt : 10
+
+});
+
+// Add grid layer 2D
+
+const GridLayer1 = new MapboxLayer({
+  id: 'GridLayer1',
+  type: GridLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  cellSize: 5000,
+  coverage: 0.9,
+  getPosition: d => [d.longO, d.latO],
+  colorAggregation: 'SUM',
+  colorScaleType: 'quantile',
+        colorRange: [
+          [77,146,33],
+		      [161,215,106],
+		      [230,245,208],
+		      [253,224,239],
+		      [233,163,201],
+		      [197,27,125]],
+  opacity: 0.8,
+  pickable: true,
+});
+
+// Add grid layer 3D
+
+const GridLayer2 = new MapboxLayer({
+  id: 'GridLayer2',
+  type: GridLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  cellSize: 5000,
+  coverage: 0.9,
+  elevationScale: 150,
+  extruded: true,
+  getPosition: d => [d.longO, d.latO],
+  getElevationValue: points => points.length,
+  colorScaleType: 'quantile',
+        colorRange: [
+          [77,146,33],
+          [161,215,106],
+          [230,245,208],
+          [253,224,239],
+          [233,163,201],
+          [197,27,125]],
+  opacity: 0.8,
+  pickable: true,
+  elevationRange: [0, 150],
+  antialias :true
+});
+
+// Add grid layer 2D
+
+const ScreenGridLayer1 = new MapboxLayer({
+  id: 'ScreenGridLayer',
+  type: ScreenGridLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getPosition: d => [d.longO, d.latO],
+  cellSizePixels: 20,
+  colorRange: [
+          [77,146,33],
+		      [161,215,106],
+		      [230,245,208],
+		      [253,224,239],
+		      [233,163,201],
+		      [197,27,125]],
+  opacity: 0.8,
+  pickable: true,
+});
+
+// Add grid layer 2D
+
+const HeatmapLayer1 = new MapboxLayer({
+  id: 'Heatmap',
+  type: HeatmapLayer,
+  data: 'https://raw.githubusercontent.com/mastersigat/data/main/RPC_PDL.json',
+  getPosition: d => [d.longO, d.latO],
+  aggregation: 'SUM',
+  radiusPixels: 30,
+  intensity: 50,
+  threshold: 0.1,
+  colorRange: [
+          [77,146,33],
+		      [161,215,106],
+		      [230,245,208],
+		      [253,224,239],
+		      [233,163,201],
+		      [197,27,125]],
+  opacity: 0.8,
+  pickable: true,
+});
+
+
+
+// Add sliders to change the layer's settings based on user input
+
+OPTIONS.forEach(key => {
+    document.getElementById(key).onchange = (evt) => {
+        var value = Number(evt.target.value);
+        document.getElementById(key + '-value').innerHTML = value;
+        if (GridLayer1) {
+            GridLayer1.setProps({
+                [key]: value });
+        };
+        if (GridLayer2) {
+            GridLayer2.setProps({
+                [key]: value });
+        };
+	    	if (ScatterplotLayer2) {
+            ScatterplotLayer2.setProps({
+                [key]: value });
+        };
+	     	if (ScatterplotLayer2) {
+            ScatterplotLayer1.setProps({
+                [key]: value });
+        };
+
+	    	if (LineLayer2) {
+            LineLayer2.setProps({
+                [key]: value });
+        };
+        if (LineLayer1) {
+            LineLayer1.setProps({
+                [key]: value });
+        };
+        if (ArcLayer1) {
+            ArcLayer1.setProps({
+                [key]: value });
+        };
+        if (ArcLayer2) {
+            ArcLayer2.setProps({
+                [key]: value });
+        };
+        if (ScreenGridLayer1) {
+            ScreenGridLayer1.setProps({
+                [key]: value });
+        };
+        if (HeatmapLayer1) {
+            HeatmapLayer1.setProps({
+                [key]: value });
+        };
+    };
+});
+
+
+
+// Add the deck.gl hex layer below labels in the Mapbox map
+
+    map.addLayer(ScatterplotLayer1);
+    map.addLayer(ScatterplotLayer2);
+    map.addLayer(ScatterplotLayer3);
+    map.addLayer(IconLayerlayer1);
+    map.addLayer(LineLayer1);
+    map.addLayer(LineLayer2);
+    map.addLayer(LineLayer3);
+  	map.addLayer(ArcLayer1);
+  	map.addLayer(ArcLayer2);
+    map.addLayer(ArcLayer3);
+    map.addLayer(GridLayer1);
+    map.addLayer(GridLayer2);
+    map.addLayer(LineLayer44);
+    map.addLayer(LineLayer49);
+    map.addLayer(LineLayer85);
+    map.addLayer(LineLayer35);
+    map.addLayer(ScreenGridLayer1);
+    map.addLayer(HeatmapLayer1);
+
+
+// Fin du Map.on
+
+});
+
+
+// Ajout boutons de navigations
+var nav = new mapboxgl.NavigationControl();
+map.addControl(nav, 'top-right');
+
+// Ajout echelle cartographique
+
+var scale = new mapboxgl.ScaleControl({
+maxWidth: 100,
+unit: 'imperial'
+});
+
+map.addControl(scale, 'bottom-right');
+
+scale.setUnit('metric');
+
+// Config affichage boutons affichage
+
+document.getElementById('3D').addEventListener('click', function ()
+{ map.flyTo({
+ pitch: 50
+ });
+  map.setLayoutProperty('extrude', 'visibility', 'visible');
+});
+
+document.getElementById('2D').addEventListener('click', function ()
+{ map.flyTo({
+ pitch: 0
+});
+  map.setLayoutProperty('classique', 'visibility', 'visible');
+  map.setLayoutProperty('extrude', 'visibility', 'none');
+
+});
+
+document.getElementById('base').addEventListener('click', function ()
+{ map.flyTo({
+'center': [-1.8, 47.2],'zoom': 8.5,	bearing:20, pitch: 50
+});
+  map.setLayoutProperty('classique', 'visibility', 'visible');
+  map.setLayoutProperty('extrude', 'visibility', 'none');
+
+});
+
+
+
+// Config affichage boutons carto
+
+document.getElementById('title').addEventListener('mousemove', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'visible');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+
+document.getElementById('A').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'visible');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('B').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'visible');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('C').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'visible');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+
+document.getElementById('P').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'visible');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('D').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'visible');
+ map.setLayoutProperty('Line1', 'visibility', 'visible');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('E').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'visible');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+map.setLayoutProperty('Dotmap2', 'visibility', 'visible');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('F').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'visible');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'visible');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('G').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'visible');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'visible');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('H').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'visible');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('I').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'visible');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('J').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'visible');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('K').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'visible');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+
+document.getElementById('L').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'visible');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+
+document.getElementById('M').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'visible');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('N').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'visible');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('0').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'visible');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('Q').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'none');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'visible');
+ map.setLayoutProperty('Line3', 'visibility', 'none');
+
+});
+
+document.getElementById('R').addEventListener('click', function ()
+{map.setLayoutProperty('Arc1', 'visibility', 'none');
+ map.setLayoutProperty('Arc2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap1', 'visibility', 'none');
+ map.setLayoutProperty('Line1', 'visibility', 'none');
+ map.setLayoutProperty('Line2', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer1', 'visibility', 'none');
+ map.setLayoutProperty('GridLayer2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap2', 'visibility', 'none');
+ map.setLayoutProperty('Dotmap3', 'visibility', 'visible');
+ map.setLayoutProperty('44', 'visibility', 'none');
+ map.setLayoutProperty('49', 'visibility', 'none');
+ map.setLayoutProperty('85', 'visibility', 'none');
+ map.setLayoutProperty('35', 'visibility', 'none');
+ map.setLayoutProperty('ScreenGridLayer', 'visibility', 'none');
+ map.setLayoutProperty('Heatmap', 'visibility', 'none');
+ map.setLayoutProperty('Icon', 'visibility', 'none');
+ map.setLayoutProperty('Arc3', 'visibility', 'none');
+ map.setLayoutProperty('Line3', 'visibility', 'visible');
+
+});
+
+
+// Configuration affichage menu couches
+switchlayer = function (lname) {
+      if (document.getElementById(lname ).checked) {
+              map.setLayoutProperty(lname, 'visibility', 'visible');
+      }
+      else {
+              map.setLayoutProperty(lname, 'visibility', 'none');}
+      };
+
+</script>
+
+</html>
